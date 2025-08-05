@@ -16,7 +16,7 @@ resource "azurerm_monitor_autoscale_setting" "scale_vm" {
     rule {
       metric_trigger {
         metric_name         = "Percentage CPU"
-        metric_resource_uri = var.vm_id
+        metric_resource_id = var.vm_id
         time_grain          = "PT1M"
         statistic           = "Average"
         time_window         = "PT5M"
@@ -36,7 +36,7 @@ resource "azurerm_monitor_autoscale_setting" "scale_vm" {
     rule {
       metric_trigger {
         metric_name         = "Percentage CPU"
-        metric_resource_uri = var.vm_id
+        metric_resource_id = var.vm_id
         time_grain          = "PT1M"
         statistic           = "Average"
         time_window         = "PT5M"

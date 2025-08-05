@@ -11,8 +11,8 @@ resource "azurerm_monitor_diagnostic_setting" "vm_diag" {
   target_resource_id         = var.vm_id
   log_analytics_workspace_id = azurerm_log_analytics_workspace.la.id
 
-  logs {
-    category = "PerformanceCounters"
+  log {
+    category = "AuditEvent"
     enabled  = true
 
     retention_policy {

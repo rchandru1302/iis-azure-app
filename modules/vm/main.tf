@@ -10,6 +10,27 @@ resource "azurerm_network_interface" "nic" {
   }
 }
 
+resource "azurerm_public_ip" "vm_public_ip" {
+  name                = "iis-vm-public-ip"
+  location            = var.location
+  resource_group_name = var.rg_name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+}
+
+resource "azurerm_network_interface" "vm_nic" {
+  name                = "iis-vm-nic"
+  location            = var.location
+  resource_group_name = var.rg_name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = var.subnet_id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.vm_public_ip.id
+  }
+}
+
 resource "azurerm_windows_virtual_machine" "iis" {
   name                = "iis-vm"
   resource_group_name = var.rg_name
@@ -17,7 +38,11 @@ resource "azurerm_windows_virtual_machine" "iis" {
   size                = "Standard_B1ms"
   admin_username      = var.admin_username
   admin_password      = var.admin_password
-  network_interface_ids = [azurerm_network_interface.nic.id]
+   
+   network_interface_ids = [
+    azurerm_network_interface.nic.id,
+    azurerm_network_interface.vm_nic.id
+  ]
 
   os_disk {
     caching              = "ReadWrite"
@@ -34,6 +59,34 @@ resource "azurerm_windows_virtual_machine" "iis" {
   provision_vm_agent       = true
   enable_automatic_updates = true
 }
+
+
+
+
+resource "azurerm_network_security_group" "vm_nsg" {
+  name                = "iis-vm-nsg"
+  location            = var.location
+  resource_group_name = var.rg_name
+
+  security_rule {
+    name                       = "RDP"
+    priority                   = 1001
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "3389"
+    source_address_prefix      = "*" // For security, restrict to your IP if possible
+    destination_address_prefix = "*"
+  }
+}
+
+resource "azurerm_network_interface_security_group_association" "vm_nic_nsg" {
+  network_interface_id      = azurerm_network_interface.vm_nic.id
+  network_security_group_id = azurerm_network_security_group.vm_nsg.id
+}
+
+
 
 resource "azurerm_virtual_machine_extension" "iis_setup" {
   name                 = "installIIS"
